@@ -9,14 +9,12 @@ const emailSchema = zod.string().email();
 const passwordSchema = zod.string().min(5);
 
 const validateUser = (req, res, next) => {
-  const username = req.body["username"];
   const email = req.body["email"];
   const password = req.body["password"];
-  const nameResult = nameSchema.safeParse(username);
   const emailResult = emailSchema.safeParse(email);
   const passwordResult = passwordSchema.safeParse(password);
 
-  if (nameResult.success && emailResult.success && passwordResult.success) {
+  if ( emailResult.success && passwordResult.success) {
     next();
   } else {
     next({ status: 400, success: false, error: "Invalid credentials..." });
