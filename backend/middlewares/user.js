@@ -4,7 +4,6 @@ const dotenv = require("dotenv");
 
 dotenv.config();
 
-const nameSchema = zod.string().min(3);
 const emailSchema = zod.string().email();
 const passwordSchema = zod.string().min(5);
 

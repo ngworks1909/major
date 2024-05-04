@@ -15,6 +15,7 @@ const decryptData = require('../functions/decryptData');
 
 
 router.post("/uploadFile", fetchUser, async (req, res) => {
+  //collect file details
   const id = req.user.id;
   let fileContent = req.body.fileContent;
   const filename = req.body.name;
@@ -28,6 +29,7 @@ router.post("/uploadFile", fetchUser, async (req, res) => {
       return res.status(400).json({ success, error: "Authentication error..." });
     }
     const user = userDoc.data();
+    //check if file already exists using hashcode
     const serializedKey = user.serializedKey;
     const hashCode = createHash(fileContent);
     const docSnapshot = await getDoc(doc(db, "userfiles", `${id}`));
@@ -47,6 +49,7 @@ router.post("/uploadFile", fetchUser, async (req, res) => {
       return res.status(400).json({success, error: 'File already exists...'})
     }
 
+    //check file in backups
     const backupSnapshot = await getDoc(doc(backupdb, "userfiles", `${id}`));
     if (!backupSnapshot.exists()) {
       success = false;
@@ -69,6 +72,7 @@ router.post("/uploadFile", fetchUser, async (req, res) => {
       if(!response.ok){
         return res.status(400).json({success, error: 'Network failure...'});
       }
+      //fetch from ackup if file exists
       const encryptedData = await response.text()
       fileContent = decryptData(encryptedData, serializedKey);
       const textblob = createBlob(fileContent, 'text/plain');
@@ -76,6 +80,7 @@ router.post("/uploadFile", fetchUser, async (req, res) => {
       success = true;
       return res.json({success, message: "File uploaded successfully..."});
     }
+    //create new file in both backup and main db
     else{
       let textblob = createBlob(fileContent, 'text/plain');
       fileId = v4();

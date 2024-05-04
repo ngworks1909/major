@@ -13,6 +13,7 @@ const { backupdb } = require("../backup");
 dotenv.config();
 
 
+//generate private key
 const generateKeyPairs = () => {
     const key = new NodeRSA({b: 2048});
     const serializedKey = key.exportKey('pkcs1-private-pem');
@@ -21,13 +22,16 @@ const generateKeyPairs = () => {
 
 
 router.post('/createUser', validateUser, async(req, res) => {
+    //signup route
     const {email, password} = req.body;
     let success = false;
     try {
         const userQuerySnapshot = await getDocs(query(collection(db, 'users'), where('email', '==', email)));
+        //check if user exists
         if (userQuerySnapshot.docs.length > 0) {
             return res.status(400).json({success, error: "User already exists..."})
         }
+
         const {user} = await createUserWithEmailAndPassword(auth, email, password);
         const id = user.uid;
         const serializedKey = generateKeyPairs();
@@ -36,6 +40,7 @@ router.post('/createUser', validateUser, async(req, res) => {
             serializedKey,
             createdAt: new Date()
         });
+        //create new user
         await setDoc(doc(db, 'userfiles', `${id}`), {
             files: arrayUnion()
         });
@@ -47,6 +52,7 @@ router.post('/createUser', validateUser, async(req, res) => {
               id,
             },
           };
+        //generate token
         const authToken = jwt.sign(data, process.env.JWT_SECRET);
         success = true;
         return res.status(200).json({ success, authToken });
@@ -55,17 +61,18 @@ router.post('/createUser', validateUser, async(req, res) => {
         console.log(error);
         return res.status(500).json({success, error: "Internal server error..."});
     }
-
 })
 
 router.post('/login', validateCredentials, async(req, res) => {
     const {email, password} = req.body;
     let success = false;
     try {
+        //fetch user details
         const userQuerySnapshot = await getDocs(query(collection(db, 'users'), where('email', '==', email)));
         if (userQuerySnapshot.docs.length === 0) {
             return res.status(400).json({success, error: "User does not exists..."})
         }
+        //signin 
         const {user} = await signInWithEmailAndPassword(auth, email, password);
         const id = user.uid;
         const data = {
@@ -73,6 +80,7 @@ router.post('/login', validateCredentials, async(req, res) => {
               id,
             },
           };
+        //generate auth token
         const authToken = jwt.sign(data, process.env.JWT_SECRET);
         success = true;
         res.status(200).json({ success, authToken });
